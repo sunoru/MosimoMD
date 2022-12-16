@@ -1,0 +1,1 @@
+MDSetup{LJCluster{SVector{3, Float64}}, MolecularDynamicsIntegrators.Verlet.VerletParameters}(0.01, 1.0, 200, 3.0, 200, 200, 200, 3, 1000, 200, "/home/sunoru/pro/julia-packages/MosimoMD/test/out/simple", 0x0000000000017645, LJCluster{SVector{3, Float64}}(8, 1.0, 1.0, 2.5, [0.0, 0.0, 0.0]), MolecularDynamicsIntegrators.Verlet.VerletParameters())
