@@ -2,16 +2,17 @@ Base.@kwdef struct MDSetup{M<:MosiModel,I<:IntegratorParameters} <: SimulationSe
     timestep::Float64
     temperature::Float64
 
-    initial_steps::Int
     compressed_temperature::Float64
+    temp_control_period::Int
 
+    initial_steps::Int
     cooling_steps::Int
     temp_control_steps::Int
     relax_steps::Int
     relax_iterations::Int
     data_steps::Int
 
-    checkpoint_period::Int
+    taping_period::Int
     output_dir::String
 
     seed::UInt64
@@ -20,6 +21,7 @@ Base.@kwdef struct MDSetup{M<:MosiModel,I<:IntegratorParameters} <: SimulationSe
     integrator_params::I
 end
 
+# not used
 predata_steps(setup::MDSetup) = step(StageDataCollecting(0), setup)
 
 @data MDStage begin
@@ -32,13 +34,20 @@ predata_steps(setup::MDSetup) = step(StageDataCollecting(0), setup)
     StageFinish
 end
 
-Base.@kwdef mutable struct MDState{R<:AbstractRNG,I<:AbstractIntegrator,MS<:MolecularSystem} <: SimulationState
-    const rng::R
+Base.@kwdef mutable struct MDState{
+    TRNG<:AbstractRNG,
+    TIntegrator<:AbstractIntegrator,
+    TSystem<:MolecularSystem,
+    TSetup<:MDSetup,
+    TTapeFiles<:Nullable{TapeFiles}
+} <: SimulationState
+    const rng::TRNG
+    const integrator::TIntegrator
+    const system::TSystem
+    const setup::TSetup
+    const tape_files::TTapeFiles
     stage::MDStage = StageBegin
     time::Float64 = 0.0
-    const integrator::I
-    const system::MS
-    const setup::MDSetup
 end
 
 MosimoBase.system(state::MDState) = state.system

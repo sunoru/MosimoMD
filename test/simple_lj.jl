@@ -1,7 +1,7 @@
 using Test
 
 using Pkg
-Pkg.add(url="https://github.com/sunoru/mosimo-examples.git", subdir="LJClusters")
+Pkg.develop(url="https://github.com/sunoru/mosimo-examples.git", subdir="LJClusters")
 
 using MosimoBase
 using LJClusters
@@ -16,14 +16,15 @@ model = LJCluster3D(N)
 setup = md_init(;
     timestep = 0.01,
     temperature = 1.0,
-    initial_steps = 200,
     compressed_temperature = 3.0,
+    temp_control_period = 25,
+    initial_steps = 200,
     cooling_steps = 200,
     temp_control_steps = 200,
     relax_steps = 200,
     relax_iterations = 3,
     data_steps = 1000,
-    checkpoint_period = 200,
+    taping_period = 10,
     output_dir = joinpath(@__DIR__, "out/simple"),
     seed = 95813,
     model

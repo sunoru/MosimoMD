@@ -9,21 +9,14 @@ function init_output(setup::MDSetup)
 end
 
 function prepare_tape(
-    output_dir::AbstractString, taping_period::Integer,
-    has_periods::Bool;
+    output_dir::AbstractString,
+    has_periods::Bool,
+    taping_period::Integer;
     filename_prefix="tape"
 )
-    tf = TapeFiles(output_dir; has_ps=has_periods, read=false, filename_prefix)
-    function update!(state::MDState)
-        @match state.stage begin
-            StageDataCollecting(step) && if step % taping_period == 0
-            end =>
-                update_tape!(tf, state)
-        end
-        tf
-    end
-    update!
+    taping_period ≤ 0 && return nothing
+    TapeFiles(output_dir; has_ps=has_periods, read=false, filename_prefix)
 end
 
-prepare_tape(setup::MDSetup, taping_period::Integer) =
-    prepare_tape(setup.output_dir, taping_period, has_pbc(setup.model))
+prepare_tape(setup::MDSetup) =
+    prepare_tape(setup.output_dir, has_pbc(setup.model), setup.taping_period)

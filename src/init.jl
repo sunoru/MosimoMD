@@ -1,14 +1,15 @@
 function md_init(;
     timestep::Real,
     temperature::Real,
-    initial_steps::Integer,
     compressed_temperature::Real,
+    temp_control_period::Integer,
+    initial_steps::Integer,
     cooling_steps::Integer,
     temp_control_steps::Integer,
     relax_steps::Integer,
     relax_iterations::Integer,
     data_steps::Integer,
-    checkpoint_period::Integer=data_steps / 10,
+    taping_period::Integer=0,
     output_dir::AbstractString,
     seed::Nullable{Integer}=nothing,
     model::MosiModel=UnknownModel(),
@@ -23,10 +24,11 @@ function md_init(;
     setup = MDSetup(;
         timestep,
         temperature,
-        initial_steps, compressed_temperature, cooling_steps,
+        compressed_temperature, temp_control_period,
+        initial_steps, cooling_steps,
         temp_control_steps, relax_steps, relax_iterations,
         data_steps,
-        checkpoint_period,
+        taping_period,
         output_dir,
         seed,
         model,
@@ -59,10 +61,12 @@ function init_state(setup::MDSetup)
     rng = new_rng(setup.seed)
     system = MosimoBase.generate_initial(setup.model, MolecularSystem; rng)
     integrator = get_integrator(setup, system)
+    tape_files = prepare_tape(setup)
     state = MDState(;
         rng,
         integrator,
         system,
-        setup
+        setup,
+        tape_files
     )
 end
