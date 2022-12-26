@@ -11,3 +11,13 @@ YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
 
 [compat]
 julia = "1.8"
+MolecularDynamicsIntegrators = "0.1"
+MosimoBase = "0.3"
+YAML = "0.4"
+
+[extras]
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test", "Pkg"]
