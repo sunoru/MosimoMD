@@ -24,7 +24,4 @@ jobs:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
       - uses: julia-actions/julia-buildpkg@latest
-      - run: |
-          julia --project=test -e \
-          'using Pkg; Pkg.add(url="https://github.com/sunoru/mosimo-examples.git", subdir="LJClusters")'
       - uses: julia-actions/julia-runtest@latest
