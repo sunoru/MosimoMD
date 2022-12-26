@@ -1,7 +1,7 @@
 using Test
 
 using Pkg
-Pkg.develop(url="https://github.com/sunoru/mosimo-examples.git", subdir="LJClusters")
+Pkg.add(url="https://github.com/sunoru/mosimo-examples.git", subdir="LJClusters")
 
 using MosimoBase
 using LJClusters
