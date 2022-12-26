@@ -1,14 +1,17 @@
 function default_callback(setup::MDSetup, logging_period=min(1000, setup.data_steps / 10))
     model = setup.model
-    (state::MDState; force_logging = false) -> begin
+    (state::MDState) -> begin
         @match state.stage begin
             StageBegin => println(" Step |   Time   |  Potential  |   Kinetic   |    Total")
+            _ => if step(state) % logging_period ≠ 1
+                return
+            end
         end
         s = system(state)
         kinetic = kinetic_energy(s, model)
         potential = potential_energy(s, model)
         total = potential + kinetic
-        @printf "%5d |%9.5f |%13.6e|%13.6e|%13.6e" state.step state.time potential kinetic total
+        @printf "%5d |%9.5f |%12.4e |%12.4e |%12.4e\n" step(state) state.time potential kinetic total
     end
 end
 
@@ -32,6 +35,7 @@ end
 
 function run_stage(::typeof(StageBegin), state, callback)
     @info "MD started."
+    callback(state)
     state.stage = StageInitial(0)
     state
 end
@@ -127,17 +131,19 @@ function Base.run(
     setup::MDSetup;
     state::Nullable{MDState}=nothing,
     callback::Nullable{Function}=nothing,
-    return_result=true
+    return_result=true,
+    force = false
 )
     if callback === nothing
         callback = default_callback(setup)
     end
     if state === nothing
-        state = init_state(setup)
+        state = init_state(setup; force)
     end
     while state.stage ≢ StageFinish
         state = run_stage(state.stage, state, callback)
     end
+    close(state.tape_files)
     if return_result
         MDResult(
             if isnothing(state.tape_files)

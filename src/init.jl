@@ -40,15 +40,6 @@ function md_init(;
     setup
 end
 
-function init_output(setup::MDSetup)
-    datapath = setup.output_dir
-    isdir(datapath) || mkpath(datapath)
-    setup_file = joinpath(datapath, "setup.yaml")
-    open(setup_file, "w") do io
-        YAML.print(io, setup)
-    end
-end
-
 # Use verlet as default integrator.
 get_integrator(setup::MDSetup, system::MosiSystem) = VerletIntegrator(
     positions(system), velocities(system),
@@ -57,11 +48,12 @@ get_integrator(setup::MDSetup, system::MosiSystem) = VerletIntegrator(
     rs -> force_function(setup.model, rs)
 )
 
-function init_state(setup::MDSetup)
+function MosimoBase.init_state(setup::MDSetup; force=false)
     rng = new_rng(setup.seed)
     system = MosimoBase.generate_initial(setup.model, MolecularSystem; rng)
+    rescale_temperature!(system, setup.model, setup.temperature)
     integrator = get_integrator(setup, system)
-    tape_files = prepare_tape(setup)
+    tape_files = prepare_tape(setup; force)
     state = MDState(;
         rng,
         integrator,

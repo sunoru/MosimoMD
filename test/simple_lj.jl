@@ -11,7 +11,9 @@ using MosimoMD
 @testset "Simple MD (LJ Cluster)" begin
 
 N = 8
-model = LJCluster3D(N)
+ρ = 0.8
+L = (N / ρ)^(1/3)
+model = LJCluster3D(N, box=Vector3(L, L, L))
 
 setup = md_init(;
     timestep = 0.01,
@@ -30,25 +32,32 @@ setup = md_init(;
     model
 )
 
-function make_callback(model)
-    Ks = Float64[]
-    Us = Float64[]
-
-    function callback(state::MDState; force_logging = false)
-        s = step(state)
-        if s % 50 == 0
-            @show s state.stage
+function make_callback(setup)
+    cb = MosimoMD.default_callback(setup, 100)
+    function callback(state::MDState)
+        if step(state) % 100 == 1
+            @show state.stage
         end
-        # @match state.stage begin
-        #     StageBegin => begin
-        #         @info "MD started."
-        #     end
-        # end
+        cb(state)
     end
 end
 
-callback = make_callback(model)
+callback = make_callback(setup)
 
-result = run(setup; callback)
+result = run(setup; callback, force=true)
+
+KEs = Float64[]
+PEs = Float64[]
+
+for i in 1:length(result.tape)
+    s = system(result, i)
+    push!(KEs, kinetic_energy(s, model))
+    push!(PEs, potential_energy(s, model))
+end
+
+@test length(result.tape) == 100
+@test mean(KEs) ≈ 13.07641033325682
+@test mean(PEs) ≈ -18.821001206035277
+@test std(KEs + PEs) ≤ 0.2
 
 end
