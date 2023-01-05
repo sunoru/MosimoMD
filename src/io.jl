@@ -2,9 +2,9 @@
 function init_output(setup::MDSetup)
     datapath = setup.output_dir
     isdir(datapath) || mkpath(datapath)
-    setup_file = joinpath(datapath, "setup.yaml")
-    open(setup_file, "w") do io
-        YAML.print(io, setup)
+    setup_file = joinpath(datapath, "setup.jld")
+    jldopen(setup_file, "w") do file
+        write(file, "setup", setup)
     end
 end
 

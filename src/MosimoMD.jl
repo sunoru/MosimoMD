@@ -2,8 +2,8 @@ module MosimoMD
 
 using Printf
 using MosimoBase
-using MolecularDynamicsIntegrators
-using YAML
+using MosimoBase: @reexport
+@reexport using MolecularDynamicsIntegrators
 
 export MDStage,
     StageBegin,
