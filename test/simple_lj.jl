@@ -44,7 +44,7 @@ end
 
 callback = make_callback(setup)
 
-result = run(setup; callback, force=true)
+result = md_run(setup; callback, force=true)
 
 KEs = Float64[]
 PEs = Float64[]

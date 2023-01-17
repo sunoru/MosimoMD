@@ -17,7 +17,7 @@ export MDState, MDSetup, MDResult
 include("./types.jl")
 include("./utils.jl")
 include("./io.jl")
-export md_init, get_integrator
+export md_init, md_run, get_integrator
 include("./init.jl")
 include("./run.jl")
 

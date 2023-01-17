@@ -1,9 +1,10 @@
-function default_callback(setup::MDSetup, logging_period=min(1000, setup.data_steps / 10))
+function default_callback(setup::MDSetup, logging_period=min(5000, setup.data_steps / 10))
     model = setup.model
     (state::MDState) -> begin
         @match state.stage begin
             StageBegin => println(" Step |   Time   |  Potential  |   Kinetic   |    Total")
-            _ => if step(state) % logging_period ≠ 1
+            StageFinish => return
+            stage => if stage.step != 1 && step(state) % logging_period ≠ 1
                 return
             end
         end
@@ -25,6 +26,9 @@ function evolve!(state::MDState)
     state
 end
 
+# default to no-op
+stage_callback(::MDSetup, stage::Type{<:MDStage}) = (state::MDState, step::Int) -> state
+
 function _run_until(f, state, target, step=0)
     while step < target
         step += 1
@@ -36,15 +40,18 @@ end
 function run_stage(::typeof(StageBegin), state, callback)
     @info "MD started."
     callback(state)
+    stage_callback(state.setup, typeof(StageBegin))(state, 0)
     state.stage = StageInitial(0)
     state
 end
 function run_stage(stage::StageInitial, state, callback)
     initial_steps = state.setup.initial_steps
     @info "Initial $initial_steps steps..."
+    scb = stage_callback(state.setup, StageInitial)
     _run_until(state, initial_steps, stage.step) do state, step
         state.stage = StageInitial(step)
         callback(state)
+        scb(state, step)
     end
     state.stage = StageCooling(0)
     state
@@ -56,9 +63,11 @@ function run_stage(stage::StageCooling, state, callback)
     model = setup.model
     compressed_temperature = setup.compressed_temperature
     @info "Cooling for $cooling_steps steps..."
+    scb = stage_callback(setup, StageCooling)
     _run_until(state, cooling_steps, stage.step) do state, step
         state.stage = StageCooling(step)
         callback(state)
+        scb(state, step)
         if step % temp_control_period == 1
             rescale_temperature!(
                 system(state),
@@ -79,9 +88,11 @@ function run_stage(stage::StageRescalingTemperature, state, callback)
     temperature = setup.temperature
     model = setup.model
     @info "[$it/$(state.setup.relax_iterations)] Rescaling temperature for $temp_control_steps steps..."
+    scb = stage_callback(setup, StageRescalingTemperature)
     _run_until(state, temp_control_steps, stage.step) do state, step
         state.stage = StageRescalingTemperature(step, it)
         callback(state)
+        scb(state, step)
         if step % temp_control_period == 1
             rescale_temperature!(
                 system(state),
@@ -100,9 +111,11 @@ function run_stage(stage::StageRelaxing, state, callback)
     relax_steps = setup.relax_steps
     relax_iterations = setup.relax_iterations
     @info "[$it/$relax_iterations] Relaxing for $relax_steps steps..."
+    scb = stage_callback(setup, StageRelaxing)
     _run_until(state, relax_steps, stage.step) do state, step
         state.stage = StageRelaxing(step, it)
         callback(state)
+        scb(state, step)
     end
     if it < relax_iterations
         state.stage = StageRescalingTemperature(0, it + 1)
@@ -116,9 +129,11 @@ function run_stage(stage::StageDataCollecting, state, callback)
     data_steps = setup.data_steps
     taping_period = setup.taping_period
     @info "Collecting data for $data_steps steps..."
+    scb = stage_callback(setup, StageDataCollecting)
     _run_until(state, data_steps, stage.step) do state, step
         state.stage = StageDataCollecting(step)
         callback(state)
+        scb(state, step)
         if !isnothing(state.tape_files) && step % taping_period == 1
             update!(state.tape_files, state)
         end
@@ -127,12 +142,12 @@ function run_stage(stage::StageDataCollecting, state, callback)
     state
 end
 
-function Base.run(
+function md_run(
     setup::MDSetup;
     state::Nullable{MDState}=nothing,
     callback::Nullable{Function}=nothing,
     return_result=true,
-    force = false
+    force=false
 )
     if callback === nothing
         callback = default_callback(setup)
