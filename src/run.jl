@@ -13,6 +13,7 @@ function default_callback(setup::MDSetup, logging_period=min(5000, setup.data_st
         potential = potential_energy(s, model)
         total = potential + kinetic
         @printf "%5d |%9.5f |%12.4e |%12.4e |%12.4e\n" step(state) state.time potential kinetic total
+        flush(stdout)
     end
 end
 
@@ -38,7 +39,6 @@ function _run_until(f, state, target, step=0)
 end
 
 function run_stage(::typeof(StageBegin), state, callback)
-    @info "MD started."
     callback(state)
     stage_callback(state.setup, typeof(StageBegin))(state, 0)
     state.stage = StageInitial(0)
@@ -155,10 +155,12 @@ function md_run(
     if state === nothing
         state = init_state(setup; force)
     end
+    @info "MD started from $(state.stage)."
     while state.stage ≢ StageFinish
         state = run_stage(state.stage, state, callback)
     end
     close(state.tape_files)
+    @info "MD finished."
     if return_result
         MDResult(
             if isnothing(state.tape_files)
