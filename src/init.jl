@@ -41,12 +41,16 @@ function md_init(;
 end
 
 # Use verlet as default integrator.
-get_integrator(setup::MDSetup, system::MosiSystem) = VerletIntegrator(
-    positions(system), velocities(system),
-    setup.timestep,
-    i -> mass(setup.model, i),
-    rs -> force_function(setup.model, rs)
-)
+function get_integrator(setup::MDSetup, system::MosiSystem)
+    rs = positions(system)
+    forces = similar(rs)
+    VerletIntegrator(
+        rs, velocities(system),
+        setup.timestep,
+        i -> mass(setup.model, i),
+        rs -> force_function(setup.model, rs; inplace=forces)
+    )
+end
 
 function MosimoBase.init_state(setup::MDSetup; force=false)
     rng = new_rng(setup.seed)
