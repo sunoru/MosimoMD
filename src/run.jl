@@ -30,7 +30,7 @@ end
 # default to no-op
 stage_callback(::MDSetup, stage::Type{<:MDStage}) = (state::MDState, step::Int) -> state
 
-function _run_until(f, state, target, step=0)
+function _run_until(f::F, state, target, step=0) where F
     while step < target
         step += 1
         f(state, step)
@@ -38,13 +38,13 @@ function _run_until(f, state, target, step=0)
     end
 end
 
-function run_stage(::typeof(StageBegin), state, callback)
+function run_stage(::typeof(StageBegin), state, callback::F) where F
     callback(state)
     stage_callback(state.setup, typeof(StageBegin))(state, 0)
     state.stage = StageInitial(0)
     state
 end
-function run_stage(stage::StageInitial, state, callback)
+function run_stage(stage::StageInitial, state, callback::F) where F
     initial_steps = state.setup.initial_steps
     @info "Initial $initial_steps steps..."
     scb = stage_callback(state.setup, StageInitial)
@@ -56,7 +56,7 @@ function run_stage(stage::StageInitial, state, callback)
     state.stage = StageCooling(0)
     state
 end
-function run_stage(stage::StageCooling, state, callback)
+function run_stage(stage::StageCooling, state, callback::F) where F
     setup = state.setup
     cooling_steps = setup.cooling_steps
     temp_control_period = setup.temp_control_period
@@ -80,7 +80,7 @@ function run_stage(stage::StageCooling, state, callback)
     state.stage = StageRescalingTemperature(0, 1)
     state
 end
-function run_stage(stage::StageRescalingTemperature, state, callback)
+function run_stage(stage::StageRescalingTemperature, state, callback::F) where F
     it = stage.iteration
     setup = state.setup
     temp_control_steps = setup.temp_control_steps
@@ -105,7 +105,7 @@ function run_stage(stage::StageRescalingTemperature, state, callback)
     state.stage = StageRelaxing(0, it)
     state
 end
-function run_stage(stage::StageRelaxing, state, callback)
+function run_stage(stage::StageRelaxing, state, callback::F) where F
     it = stage.iteration
     setup = state.setup
     relax_steps = setup.relax_steps
@@ -124,7 +124,7 @@ function run_stage(stage::StageRelaxing, state, callback)
     end
     state
 end
-function run_stage(stage::StageDataCollecting, state, callback)
+function run_stage(stage::StageDataCollecting, state, callback::F) where F
     setup = state.setup
     data_steps = setup.data_steps
     taping_period = setup.taping_period
@@ -145,10 +145,10 @@ end
 function md_run(
     setup::MDSetup;
     state::Nullable{MDState}=nothing,
-    callback::Nullable{Function}=nothing,
+    callback::Nullable{F}=nothing,
     return_result=true,
     force=false
-)
+) where {F <: Function}
     if callback === nothing
         callback = default_callback(setup)
     end
