@@ -69,7 +69,7 @@ function run_stage(stage::StageCooling, state, callback::F) where F
         state.stage = StageCooling(step)
         callback(state)
         scb(state, step)
-        if step % temp_control_period == 0
+        if step % temp_control_period == 1
             rescale_temperature!(
                 system(state),
                 model,
@@ -94,7 +94,7 @@ function run_stage(stage::StageRescalingTemperature, state, callback::F) where F
         state.stage = StageRescalingTemperature(step, it)
         callback(state)
         scb(state, step)
-        if step % temp_control_period == 0
+        if step % temp_control_period == 1
             rescale_temperature!(
                 system(state),
                 model,
@@ -135,9 +135,12 @@ function run_stage(stage::StageDataCollecting, state, callback::F) where F
         state.stage = StageDataCollecting(step)
         callback(state)
         scb(state, step)
-        if !isnothing(state.tape_files) && step % taping_period == 0
+        if !isnothing(state.tape_files) && step % taping_period == 1
             update!(state.tape_files, state)
         end
+    end
+    if !isnothing(state.tape_files) && data_steps % taping_period == 0
+        update!(state.tape_files, state)
     end
     state.stage = StageFinish
     state
