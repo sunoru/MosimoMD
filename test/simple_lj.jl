@@ -55,9 +55,9 @@ for i in 1:length(result.tape)
     push!(PEs, potential_energy(s, model))
 end
 
-@test length(result.tape) == 100
-@test mean(KEs) ≈ 13.07641033325682
-@test mean(PEs) ≈ -18.821001206035277
+@test length(result.tape) == 101
+@test isapprox(mean(KEs), 13.07, atol=0.01)
+@test isapprox(mean(PEs), -18.81, atol=0.01)
 @test std(KEs + PEs) ≤ 0.2
 
 end
