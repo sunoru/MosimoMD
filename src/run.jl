@@ -163,6 +163,7 @@ function md_run(
     while state.stage ≢ StageFinish
         state = run_stage(state.stage, state, callback)
     end
+    callback(state)
     if !isnothing(state.tape_files)
         close(state.tape_files)
     end
